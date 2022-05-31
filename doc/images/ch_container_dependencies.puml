@@ -2,7 +2,7 @@
 
 component tccore as "Trusted Connector"
 
-component chapi as "clearing-house-api"
+component logservice as "logging-service"
 component docapi as "document-api"
 component keyapi as "keyring-api"
 
@@ -10,10 +10,10 @@ database chmongo as "clearing-house-mongo"
 database docmongo as "document-mongo"
 database keymongo as "keyring-mongo"
 
-tccore --> chapi
-chapi -- chmongo
-chapi --> docapi
-chapi --> keyapi
+tccore --> logservice
+logservice -- chmongo
+logservice --> docapi
+logservice --> keyapi
 docapi -- docmongo
 docapi --> keyapi
 keyapi -- keymongo
