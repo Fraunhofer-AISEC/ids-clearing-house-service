@@ -36,6 +36,7 @@ pub const DOCUMENT_DB: &'static str = "document";
 pub const KEYRING_DB: &'static str = "keyring";
 pub const PROCESS_DB: &'static str = "process";
 pub const MONGO_COLL_DOCUMENTS: &'static str = "documents";
+pub const MONGO_COLL_DOCUMENT_BUCKET: &'static str = "document_bucket";
 pub const MONGO_COLL_DOC_TYPES: &'static str = "doc_types";
 pub const MONGO_COLL_DOC_PARTS: &'static str = "parts";
 pub const MONGO_COLL_PROCESSES: &'static str = "processes";

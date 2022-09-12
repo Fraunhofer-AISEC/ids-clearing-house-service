@@ -1,6 +1,6 @@
 use mongodb::{Client, Database, IndexModel};
-use mongodb::bson::doc;
-use mongodb::options::{CreateCollectionOptions, FindOptions, IndexOptions, WriteConcern};
+use mongodb::bson::{Bson, doc};
+use mongodb::options::{CreateCollectionOptions, CreateIndexOptions, FindOptions, IndexOptions, UpdateModifications, UpdateOptions, WriteConcern};
 use rocket::{Build, Rocket};
 use rocket::fairing::{self, Fairing, Info, Kind};
 use rocket::futures::TryStreamExt;
@@ -8,13 +8,14 @@ use rocket::serde::json::json;
 use std::convert::TryFrom;
 use chrono::NaiveDateTime;
 
-use core_lib::constants::{DATABASE_URL, DOCUMENT_DB, CLEAR_DB, MONGO_COLL_DOCUMENTS, MONGO_DT_ID, MONGO_ID, MONGO_PID, DOCUMENT_DB_CLIENT, MONGO_TC, MONGO_TS};
+use core_lib::constants::{DATABASE_URL, DOCUMENT_DB, CLEAR_DB, MAX_NUM_RESPONSE_ENTRIES, MONGO_COLL_DOCUMENTS, MONGO_DT_ID, MONGO_ID, MONGO_PID, DOCUMENT_DB_CLIENT, MONGO_TC, MONGO_TS, MONGO_COLL_DOCUMENT_BUCKET};
 use core_lib::db::{DataStoreApi, init_database_client};
 use core_lib::errors::*;
 use core_lib::model::document::{Document, EncryptedDocument};
 use core_lib::model::SortingOrder;
+use crate::db::bucket::{DocumentBucket, DocumentBucketUpdate};
 
-
+mod bucket;
 #[cfg(test)] mod tests;
 
 #[derive(Clone, Debug)]
@@ -67,7 +68,7 @@ impl Fairing for DatastoreConfigurator {
                             let mut options = CreateCollectionOptions::default();
                             options.write_concern = Some(write_concern);
                             debug!("Create collection {} ...", MONGO_COLL_DOCUMENTS);
-                            match datastore.client.database(DOCUMENT_DB).create_collection(MONGO_COLL_DOCUMENTS, options).await{
+                            match datastore.client.database(DOCUMENT_DB).create_collection(MONGO_COLL_DOCUMENTS, options.clone()).await{
                                 Ok(_) => {
                                     debug!("... done.");
                                 }
@@ -76,6 +77,19 @@ impl Fairing for DatastoreConfigurator {
                                     return Err(rocket);
                                 }
                             };
+                            match datastore.client.database(DOCUMENT_DB).create_collection(MONGO_COLL_DOCUMENT_BUCKET, options).await{
+                                Ok(_) => {
+                                    debug!("... done.");
+                                }
+                                Err(_) => {
+                                    debug!("... failed.");
+                                    return Err(rocket);
+                                }
+                            };
+
+                            //TODO: how to ensure uniqueness in the bucket version?
+
+                            // This purpose of this index is to ensure that the transaction counter is unique
                             let mut index_options = IndexOptions::default();
                             index_options.unique = Some(true);
                             let mut index_model = IndexModel::default();
@@ -84,6 +98,21 @@ impl Fairing for DatastoreConfigurator {
 
                             debug!("Create unique index for {} ...", MONGO_COLL_DOCUMENTS);
                             match datastore.client.database(DOCUMENT_DB).collection::<Document>(MONGO_COLL_DOCUMENTS).create_index(index_model, None).await{
+                                Ok(result) => {
+                                    debug!("... index {} created", result.index_name);
+                                }
+                                Err(_) => {
+                                    debug!("... failed.");
+                                    return Err(rocket);
+                                }
+                            }
+
+                            // This creates a compound index over pid and the timestamp to enable paging using buckets
+                            let mut compound_index_model = IndexModel::default();
+                            compound_index_model.keys =  doc!{MONGO_PID: 1, MONGO_TS: 1};
+
+                            debug!("Create unique index for {} ...", MONGO_COLL_DOCUMENT_BUCKET);
+                            match datastore.client.database(DOCUMENT_DB).collection::<Document>(MONGO_COLL_DOCUMENT_BUCKET).create_index(compound_index_model, None).await{
                                 Ok(result) => {
                                     debug!("... index {} created", result.index_name);
                                 }
@@ -125,11 +154,46 @@ impl DataStoreApi for DataStore {
 impl DataStore {
     // DOCUMENT
     pub async fn add_document(&self, doc: EncryptedDocument) -> Result<bool> {
+        trace!("add_document to bucket");
+        self.add_document_to_bucket(&doc).await;
         trace!("add_document({:#?})", json!(doc));
         let coll = self.database.collection::<EncryptedDocument>(MONGO_COLL_DOCUMENTS);
         match coll.insert_one(doc.clone(), None).await {
             Ok(_r) => {
                 debug!("added new document: {}", &_r.inserted_id);
+                debug!("test 123");
+                Ok(true)
+            },
+            Err(e) => {
+                error!("failed to store document: {:#?}", &e);
+                Err(Error::from(e))
+            }
+        }
+    }
+
+    pub async fn add_document_to_bucket(&self, doc: &EncryptedDocument) -> Result<bool>{
+        debug!("add_document to bucket");
+        let coll = self.database.collection::<EncryptedDocument>(MONGO_COLL_DOCUMENT_BUCKET);
+        let mut update_options = UpdateOptions::default();
+        update_options.upsert = Some(true);
+        let id = format!("^{}_", doc.pid.clone());
+        let re = mongodb::bson::Regex{
+            pattern: id,
+            options: String::new()
+        };
+
+        let query = doc!{"_id": re, "pid": doc.pid.clone(), "count": mongodb::bson::bson!({"$lt": MAX_NUM_RESPONSE_ENTRIES as i64})};
+
+        match coll.update_one(query,
+                        doc! {
+                            "$push": {
+                                "documents": mongodb::bson::to_bson(&doc).unwrap(),
+                            },
+                            "$inc": {"count": 1},
+                            "$setOnInsert": { "_id": format!("{}_{}", doc.pid.clone(), doc.ts)}
+                        }, update_options).await{
+            Ok(_r) => {
+                debug!("added new document: {:#?}", &_r.upserted_id);
                 Ok(true)
             },
             Err(e) => {

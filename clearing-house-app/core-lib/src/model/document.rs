@@ -170,31 +170,6 @@ impl Document{
             parts,
         }
     }
-
-    pub fn string_to_vec(value: String) -> Option<Vec<String>> {
-        let mut vec = vec![];
-        for item in value.split(SPLIT_SIGN) {
-            match item {
-                "" => (),
-                _ => vec.push(String::from(item))
-            }
-        }
-        if vec.len() > 0 {
-            Some(vec)
-        }
-        else {
-            None
-        }
-    }
-
-    pub fn vec_to_string<T: ToString>(v: Vec<T>) -> String {
-        let mut value = String::new();
-        for x in v {
-            value.push_str(&format!("{}{}{}{}", SPLIT_QUOTE, x.to_string(), SPLIT_QUOTE, SPLIT_SIGN));
-        }
-        let _remove_last = value.pop();
-        value
-    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
