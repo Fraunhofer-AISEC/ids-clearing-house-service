@@ -239,8 +239,13 @@ async fn log_message(
                 }
             }
         },
-        _ => {
+        Ok(None) => {
+            println!("None!");
+            ApiResponse::InternalError(String::from("Internal error while preparing transaction data"))
+        }
+        Err(e) => {
             error!("Error while getting transaction id!");
+            println!("{}", e);
             ApiResponse::InternalError(String::from("Internal error while preparing transaction data"))
         }
     }
@@ -345,7 +350,7 @@ async fn query_pid(
     match doc_api.get_documents(&apikey.raw, &pid, sanitized_page, sanitized_size, sanitized_sort, date_from, date_to) {
         Ok(r) => {
             let messages: Vec<IdsMessage> = r.documents.iter().map(|d| IdsMessage::from(d.clone())).collect();
-            let result = IdsQueryResult::new(r.date_from, r.date_to, r.page, r.max_page, r.size, r.order, messages);
+            let result = IdsQueryResult::new(r.date_from, r.date_to, r.page, r.size, r.order, messages);
             ApiResponse::SuccessOk(json!(result))
 
         },

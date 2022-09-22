@@ -58,19 +58,17 @@ pub struct QueryResult{
     pub date_from: i64,
     pub date_to: i64,
     pub page: Option<i32>,
-    pub max_page: i32,
     pub size: Option<i32>,
     pub order: String,
     pub documents: Vec<Document>
 }
 
 impl QueryResult{
-    pub fn new(date_from: i64, date_to: i64, page: Option<i32>, max_page: i32, size: Option<i32>, order: String, documents: Vec<Document>) -> QueryResult{
+    pub fn new(date_from: i64, date_to: i64, page: Option<i32>, size: Option<i32>, order: String, documents: Vec<Document>) -> QueryResult{
         QueryResult{
             date_from,
             date_to,
             page,
-            max_page,
             size,
             order,
             documents

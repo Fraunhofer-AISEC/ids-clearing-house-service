@@ -53,10 +53,17 @@ pub const MONGO_OWNER: &'static str = "owner";
 pub const MONGO_TS: &'static str = "ts";
 pub const MONGO_TC: &'static str = "tc";
 
+pub const MONGO_DOC_ARRAY: &'static str = "documents";
+pub const MONGO_COUNTER: &'static str = "counter";
+pub const MONGO_FROM_TS: &'static str = "from_ts";
+pub const MONGO_TO_TS: &'static str = "to_ts";
+
 // definition of default database values
 pub const DEFAULT_PROCESS_ID: &'static str = "default";
 pub const MAX_NUM_RESPONSE_ENTRIES: u64 = 1000;
 pub const DEFAULT_NUM_RESPONSE_ENTRIES: u64 = 100;
+
+pub const DEFAULT_DOC_TYPE: &'static str = "IDS_MESSAGE";
 
 // split string symbols for vec_to_string and string_to_vec
 pub const SPLIT_QUOTE: &'static str = "'";

@@ -13,6 +13,7 @@ chrono = { version = "0.4", features = ["serde"] }
 core-lib = {path = "../core-lib" }
 error-chain = "0.12.4"
 fern = "0.5"
+futures = "0.3.24"
 hex = "0.4.3"
 log = "0.4.14"
 mongodb ="2.3.0"

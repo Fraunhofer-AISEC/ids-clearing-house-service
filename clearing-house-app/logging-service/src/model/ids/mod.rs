@@ -180,20 +180,18 @@ pub struct IdsQueryResult{
     pub date_from: String,
     pub date_to: String,
     pub page: i32,
-    pub max_page: i32,
     pub size: i32,
     pub order: String,
     pub documents: Vec<IdsMessage>
 }
 
 impl IdsQueryResult{
-    pub fn new(date_from: i64, date_to: i64, page: Option<i32>, max_page: i32, size: Option<i32>, order: String, documents: Vec<IdsMessage>) -> IdsQueryResult{
+    pub fn new(date_from: i64, date_to: i64, page: Option<i32>, size: Option<i32>, order: String, documents: Vec<IdsMessage>) -> IdsQueryResult{
 
         IdsQueryResult{
             date_from: NaiveDateTime::from_timestamp(date_from, 0).format("%Y-%m-%d %H:%M:%S").to_string(),
             date_to: NaiveDateTime::from_timestamp(date_to, 0).format("%Y-%m-%d %H:%M:%S").to_string(),
             page: page.unwrap_or(-1),
-            max_page,
             size: size.unwrap_or(-1),
             order,
             documents
