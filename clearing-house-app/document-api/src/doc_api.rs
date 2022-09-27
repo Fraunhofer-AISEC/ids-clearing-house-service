@@ -172,12 +172,12 @@ async fn get_enc_documents_for_pid(
         None => DEFAULT_NUM_RESPONSE_ENTRIES
     };
 
-    // Sorting order is already validated and defaults to ascending
+    // Sorting order is already validated and defaults to descending
     let sanitized_sort = match sort{
         Some(s) => {
             s
         },
-        None => Ascending
+        None => Descending
     };
 
     // Parsing the dates for duration queries

@@ -12,7 +12,7 @@ use core_lib::{
         document::Document,
         process::Process,
         SortingOrder,
-        SortingOrder::Ascending
+        SortingOrder::Descending
     }
 };
 use rocket::serde::json::{json, Json};
@@ -344,7 +344,7 @@ async fn query_pid(
 
     let sanitized_sort = match sort {
         Some(s) => s,
-        None => Ascending
+        None => Descending
     };
 
     match doc_api.get_documents(&apikey.raw, &pid, sanitized_page, sanitized_size, sanitized_sort, date_from, date_to) {

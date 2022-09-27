@@ -47,7 +47,12 @@ impl Fairing for DatastoreConfigurator {
                     .await{
                     Ok(colls) => {
                         debug!("... found collections: {:#?}", &colls);
-                        if colls.len() > 0 && clear_db{
+                        let number_of_colls = match colls.contains(&MONGO_COLL_DOCUMENT_BUCKET.to_string()){
+                            true => colls.len(),
+                            false => 0
+                        };
+
+                        if number_of_colls > 0 && clear_db{
                             debug!("Database not empty and clear_db == true. Dropping database...");
                             match datastore.client.database(DOCUMENT_DB).drop(None).await{
                                 Ok(_) => {
@@ -59,7 +64,7 @@ impl Fairing for DatastoreConfigurator {
                                 }
                             };
                         }
-                        if colls.len() == 0 || clear_db{
+                        if number_of_colls == 0 || clear_db{
                             debug!("Database empty. Need to initialize...");
                             let mut write_concern = WriteConcern::default();
                             write_concern.journal = Some(true);
