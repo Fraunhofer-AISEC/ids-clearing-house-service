@@ -38,7 +38,6 @@ private data class ChReceipt(val data: String)
 data class QueryResult(val date_from: String,
                        val date_to: String,
                        val page: Int,
-                       val max_page: Int,
                        val size: Int,
                        val order: String,
                        val documents: List<String>)
@@ -164,7 +163,6 @@ class Utility {
                 json["date_from"]!!.jsonPrimitive.content,
                 json["date_to"]!!.jsonPrimitive.content,
                 json["page"]!!.jsonPrimitive.int,
-                json["max_page"]!!.jsonPrimitive.int,
                 json["size"]!!.jsonPrimitive.int,
                 json["order"]!!.jsonPrimitive.content,
                 json["documents"]!!.jsonArray.map { it.toString() }

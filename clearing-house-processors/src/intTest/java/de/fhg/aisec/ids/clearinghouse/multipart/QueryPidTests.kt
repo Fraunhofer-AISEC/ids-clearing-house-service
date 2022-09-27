@@ -82,6 +82,18 @@ class QueryPidTests {
         failQueryPid(pid, 403)
     }
 
+    @Test
+    fun queryPid6(){
+        val pid = formatId("mp-qpid6")
+
+        // create Pid
+        succLogMessage(pid, "This is the log message!")
+
+        // Test: query non existing page results in empty array
+        val result = succQueryPid(pid, 2)
+        Assert.assertEquals("Should receive empty array!", 0, result.documents.size)
+    }
+
     companion object{
         fun failQueryPid(pid: String, code: Int){
             val call = client.newCall(MultipartClient.queryMessage(pid, null, ""))
@@ -94,8 +106,8 @@ class QueryPidTests {
             response.close()
         }
 
-        fun succQueryPid(pid: String): QueryResult{
-            val call = client.newCall(MultipartClient.queryMessage(pid, null, ""))
+        fun succQueryPid(pid: String, page: Int = 1, size: Int = 100, sort: String = "desc"): QueryResult{
+            val call = client.newCall(MultipartClient.queryMessage(pid, null, "", page=page, size=size, sort=sort))
             val response = call.execute()
             // check http status code
             Assert.assertEquals("Unexpected http status code!", 200, response.code)

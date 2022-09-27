@@ -78,7 +78,7 @@ class Idscp2EndpointTest {
             return Idscp2EndpointTest.client.send(m, header, p)
         }
 
-        fun queryMessage(pid: String, id: String?, payload: String, authenticated: Boolean = true, client: Int = 1): Triple<Message?, ByteArray?, Map<String, String>?> {
+        fun queryMessage(pid: String, id: String?, payload: String, authenticated: Boolean = true, client: Int = 1, page: Int = 1, size: Int = 100, sort: String = "desc"): Triple<Message?, ByteArray?, Map<String, String>?> {
             val m = if (authenticated){
                 getMessage(MessageType.QUERY, client)
             } else{
@@ -88,7 +88,7 @@ class Idscp2EndpointTest {
                 mapOf("ch-ids-pid" to pid, "ch-ids-id" to id, "Content-Type" to "application/json" )
             }
             else{
-                mapOf("ch-ids-pid" to pid, "Content-Type" to "application/json" )
+                mapOf("ch-ids-pid" to pid, "ch-ids-page" to page.toString(), "ch-ids-size" to size.toString(), "ch-ids-sort" to sort, "Content-Type" to "application/json" )
             }
             val p = payload.toByteArray()
             return Idscp2EndpointTest.client.send(m, header, p)
