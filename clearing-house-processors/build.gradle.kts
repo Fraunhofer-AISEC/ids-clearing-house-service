@@ -116,11 +116,9 @@ dependencies {
 
     testApi(libs.slf4j.simple)
     testImplementation(libs.junit5)
-    //testImplementation("org.junit.jupiter", "junit-jupiter", libraryVersions["junit5"])
-    //testImplementation("com.squareup.okhttp3", "okhttp", libraryVersions["okhttp"])
     testImplementation(libs.okhttp3)
     testImplementation(kotlin("test"))
-    testImplementation("org.jetbrains.kotlinx", "kotlinx-serialization-json", "1.3.2")
+    testImplementation(libs.kotlin.serialization.json)
 }
 
 tasks.withType<KotlinCompile> {

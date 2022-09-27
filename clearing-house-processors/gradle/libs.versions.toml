@@ -5,6 +5,8 @@ ktlint = "0.46.1"
 # Kotlin library/compiler version
 kotlin = "1.7.10"
 kotlinxCoroutines = "1.6.4"
+kotlinxSerialization = "1.4.0"
+
 # HTTP client
 ktor = "2.1.0"
 okhttp = "4.9.1"
@@ -37,6 +39,7 @@ okhttp3 = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okht
 mockito = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
 camel-test = { group = "org.apache.camel", name = "camel-test", version.ref = "camel" }
 junit5 = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit5" }
+kotlin-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 
 # camel-multipart-processor
 camel-jetty = { group = "org.apache.camel", name = "camel-jetty", version.ref = "camel" }
