@@ -38,60 +38,56 @@ import java.io.InputStream
  */
 class ClearingHouseInfomodelParsingProcessor : Processor {
     override fun process(exchange: Exchange) {
-       processMultipartInput(exchange)
+        val egetIn = exchange.getIn()
+        val headers = egetIn.headers
+
+        if (LOG.isTraceEnabled) {
+            LOG.trace("[IN] ${ClearingHouseInfomodelParsingProcessor::class.java.simpleName}")
+            for (header in headers.keys) {
+                LOG.trace("Found header '{}':'{}'", header, headers[header])
+            }
+        }
+
+        exchange.getIn().setHeader(IDS_PROTOCOL, PROTO_MULTIPART)
+
+        // parse IDS header
+        val idsHeader: Message?
+        try {
+            idsHeader = SERIALIZER.deserialize(headers[CAMEL_MULTIPART_HEADER] as String?,
+                Message::class.java)
+        }
+        catch (exception: IOException){
+            LOG.warn("Invalid Infomodel Message!")
+            throw IOException("Invalid InfoModel Message!")
+        }
+
+        // Prepare compound message for Clearing House Service API
+        val contentTypeHeader = (headers[TYPE_HEADER] as String?)
+        val converted = ClearingHouseMessage(idsHeader, contentTypeHeader, (exchange.message.body as InputStream).readBytes())
+
+        if (LOG.isTraceEnabled) {
+            LOG.trace("Received payload: {}", converted.payload)
+        }
+
+        // Input validation: check that payload type of create pid message is application/json
+        if (converted.header is RequestMessage && converted.header !is QueryMessage) {
+            val expectedContentType = ContentType.create("application/json")
+            if (converted.payload != null && converted.payload!!.isNotEmpty() && expectedContentType.mimeType != converted.payloadType) {
+                LOG.warn("Expected application/json, got {}", converted.payloadType)
+                throw IllegalArgumentException("Expected content-type application/json")
+            }
+        }
+
+        // Store ids header for response processor
+        exchange.setProperty(IDS_MESSAGE_HEADER, idsHeader)
+
+        // Set Content-Type from payload part of compound message and populate body with new payload
+        exchange.getIn().setHeader(TYPE_HEADER, TYPE_JSON)
+        exchange.getIn().body = converted.toJson()
     }
 
     companion object {
-        val LOG = LoggerFactory.getLogger(ClearingHouseInfomodelParsingProcessor::class.java)
+        private val LOG = LoggerFactory.getLogger(ClearingHouseInfomodelParsingProcessor::class.java)
         private val SERIALIZER = Serializer()
-
-        fun processMultipartInput(exchange: Exchange){
-            val egetIn = exchange.getIn()
-            val headers = egetIn.headers
-
-            if (LOG.isTraceEnabled) {
-                LOG.trace("[IN] ${ClearingHouseInfomodelParsingProcessor::class.java.simpleName}")
-                for (header in headers.keys) {
-                    LOG.trace("Found header '{}':'{}'", header, headers[header])
-                }
-            }
-
-            exchange.getIn().setHeader(IDS_PROTOCOL, PROTO_MULTIPART)
-
-            // parse IDS header
-            var idsHeader: Message?
-            try {
-                 idsHeader = SERIALIZER.deserialize(headers[CAMEL_MULTIPART_HEADER] as String?,
-                    Message::class.java)
-            }
-            catch (exception: IOException){
-                LOG.warn("Invalid Infomodel Message!")
-                throw IOException("Invalid InfoModel Message!")
-            }
-
-            // Prepare compound message for Clearing House Service API
-            val contentTypeHeader = (headers[TYPE_HEADER] as String?)
-            val converted = ClearingHouseMessage(idsHeader, contentTypeHeader, (exchange.message.body as InputStream).readBytes())
-
-            if (LOG.isTraceEnabled) {
-                LOG.trace("Received payload: {}", converted.payload)
-            }
-
-            // Input validation: check that payload type of create pid message is application/json
-            if (converted.header is RequestMessage && converted.header !is QueryMessage) {
-                val expectedContentType = ContentType.create("application/json")
-                if (converted.payload != null && converted.payload!!.isNotEmpty() && expectedContentType.mimeType != converted.payloadType) {
-                    LOG.warn("Expected application/json, got {}", converted.payloadType)
-                    throw IllegalArgumentException("Expected content-type application/json")
-                }
-            }
-
-            // Store ids header for response processor
-            exchange.setProperty(IDS_MESSAGE_HEADER, idsHeader)
-
-            // Set Content-Type from payload part of compound message and populate body with new payload
-            exchange.getIn().setHeader(TYPE_HEADER, TYPE_JSON)
-            exchange.getIn().body = converted.toJson()
-        }
     }
 }

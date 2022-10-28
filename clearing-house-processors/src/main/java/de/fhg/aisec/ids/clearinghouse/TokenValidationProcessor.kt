@@ -19,47 +19,65 @@
  */
 package de.fhg.aisec.ids.clearinghouse
 
-import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.*
+import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.AUTH_HEADER
+import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.BEARER
+import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.IDS_MESSAGE_HEADER
+import de.fhg.aisec.ids.idscp2.defaultdrivers.daps.aisecdaps.AisecDapsDriver
 import de.fraunhofer.iais.eis.Message
 import org.apache.camel.Exchange
 import org.apache.camel.Processor
+import org.eclipse.jetty.server.Request
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.security.cert.Certificate
+import java.security.cert.X509Certificate
+import javax.net.ssl.SSLPeerUnverifiedException
+import javax.net.ssl.SSLSession
 
 /**
  * This processor validates the JWT token in the IDS header
  */
 class TokenValidationProcessor : Processor {
     override fun process(exchange: Exchange) {
-       processInfoModelInput(exchange)
+        val eIn = exchange.getIn()
+        val headers = eIn.headers
+
+        if (LOG.isTraceEnabled) {
+            LOG.trace("[IN] ${TokenValidationProcessor::class.java.simpleName}")
+            for (header in headers.keys) {
+                LOG.trace("Found header '{}':'{}'", header, headers[header])
+            }
+        }
+
+        val request = exchange.message.headers["CamelHttpServletRequest"] as Request
+        val sslSession = request.getAttribute("org.eclipse.jetty.servlet.request.ssl_session") as SSLSession
+        val peerCertificates: Array<Certificate>
+        try {
+            peerCertificates = sslSession.peerCertificates
+            if (LOG.isDebugEnabled) {
+                LOG.debug("Peer Certificates: {}", peerCertificates)
+            }
+        } catch (e: SSLPeerUnverifiedException) {
+            LOG.error("Client didn't provide a certificate!")
+            throw e
+        }
+
+        val idsHeader = exchange.getProperty(IDS_MESSAGE_HEADER, Message::class.java)
+            ?: throw RuntimeException("No IDS header provided!")
+        val dat = idsHeader.securityToken?.tokenValue ?: throw RuntimeException("No DAT provided!")
+        try {
+            DAPS_DRIVER.verifyToken(dat.toByteArray(), peerCertificates[0] as X509Certificate)
+        } catch (e: Exception) {
+            throw SecurityException("Access Token did not match presented certificate!", e)
+        }
+
+        // Extract DAT from IDS header and assemble auth header
+        val token = BEARER + dat
+        exchange.getIn().setHeader(AUTH_HEADER, token)
     }
 
     companion object {
-        val LOG = LoggerFactory.getLogger(TokenValidationProcessor::class.java)
-
-        fun processInfoModelInput(exchange: Exchange){
-            val egetIn = exchange.getIn()
-            val headers = egetIn.headers
-
-            if (LOG.isTraceEnabled) {
-                LOG.trace("[IN] ${TokenValidationProcessor::class.java.simpleName}")
-                for (header in headers.keys) {
-                    LOG.trace("Found header '{}':'{}'", header, headers[header])
-                }
-            }
-
-            val idsHeader = exchange.getProperty(IDS_MESSAGE_HEADER, Message::class.java)
-            //TODO: validate that token aki:ski and certificate aki:ski match
-            if (true){
-
-            }
-            else{
-                LOG.warn("Connector with id: {} sent token with id:{}")
-                throw SecurityException("Access Token did not match presented certificate!")
-            }
-
-            // extract security token from IDS header and set auth header
-            val token = BEARER + (idsHeader?.securityToken?.tokenValue ?: "")
-            exchange.getIn().setHeader(AUTH_HEADER, token)
-        }
+        val LOG: Logger = LoggerFactory.getLogger(TokenValidationProcessor::class.java)
+        val DAPS_DRIVER = AisecDapsDriver(Configuration.createDapsConfig())
     }
 }

@@ -2,11 +2,11 @@ package de.fhg.aisec.ids.clearinghouse.idscp2
 
 import de.fhg.aisec.ids.clearinghouse.MessageType
 import de.fhg.aisec.ids.clearinghouse.Utility
-import de.fhg.aisec.ids.idscp2.default_drivers.remote_attestation.dummy.RaProverDummy2
-import de.fhg.aisec.ids.idscp2.default_drivers.remote_attestation.dummy.RaVerifierDummy2
-import de.fhg.aisec.ids.idscp2.default_drivers.secure_channel.tlsv1_3.NativeTlsConfiguration
-import de.fhg.aisec.ids.idscp2.idscp_core.api.configuration.AttestationConfig
-import de.fhg.aisec.ids.idscp2.idscp_core.api.configuration.Idscp2Configuration
+import de.fhg.aisec.ids.idscp2.defaultdrivers.remoteattestation.dummy.RaProverDummy2
+import de.fhg.aisec.ids.idscp2.defaultdrivers.remoteattestation.dummy.RaVerifierDummy2
+import de.fhg.aisec.ids.idscp2.defaultdrivers.securechannel.tls13.NativeTlsConfiguration
+import de.fhg.aisec.ids.idscp2.core.api.configuration.AttestationConfig
+import de.fhg.aisec.ids.idscp2.core.api.configuration.Idscp2Configuration
 import de.fraunhofer.iais.eis.DynamicAttributeTokenBuilder
 import de.fraunhofer.iais.eis.Message
 import de.fraunhofer.iais.eis.TokenFormat
@@ -32,7 +32,11 @@ class Idscp2EndpointTest {
         // create secureChannel config
         private val nativeTlsConfiguration = NativeTlsConfiguration.Builder()
             .setKeyStorePath(Utility.keyStorePath)
+            .setKeyPassword(Utility.password)
+            .setKeyStorePath(Utility.keyStorePath)
+            .setKeyStorePassword(Utility.password)
             .setTrustStorePath(Utility.trustStorePath)
+            .setTrustStorePassword(Utility.password)
             .setCertificateAlias("1.0.1")
             .setHost("provider-core")
             .build()

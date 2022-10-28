@@ -1,10 +1,10 @@
 package de.fhg.aisec.ids.clearinghouse
 
 import de.fhg.aisec.ids.clearinghouse.multipart.MultipartEndpointTest
-import de.fhg.aisec.ids.idscp2.default_drivers.daps.aisec_daps.AisecDapsDriver
-import de.fhg.aisec.ids.idscp2.default_drivers.daps.aisec_daps.AisecDapsDriverConfig
-import de.fhg.aisec.ids.idscp2.default_drivers.daps.aisec_daps.SecurityProfile
-import de.fhg.aisec.ids.idscp2.default_drivers.daps.aisec_daps.SecurityRequirements
+import de.fhg.aisec.ids.idscp2.defaultdrivers.daps.aisecdaps.AisecDapsDriver
+import de.fhg.aisec.ids.idscp2.defaultdrivers.daps.aisecdaps.AisecDapsDriverConfig
+import de.fhg.aisec.ids.idscp2.defaultdrivers.daps.aisecdaps.SecurityProfile
+import de.fhg.aisec.ids.idscp2.defaultdrivers.daps.aisecdaps.SecurityRequirements
 import de.fraunhofer.iais.eis.*
 import de.fraunhofer.iais.eis.ids.jsonld.Serializer
 import kotlinx.serialization.Serializable
@@ -92,10 +92,16 @@ class Utility {
             .setRequiredSecurityLevel(SecurityProfile.INVALID)
             .build()
 
+        val password = "password".toCharArray()
+
         val dapsDriver = AisecDapsDriver(
             AisecDapsDriverConfig.Builder()
+                .setKeyPassword(password)
                 .setKeyStorePath(keyStorePath)
+                .setKeyStorePassword(password)
+                .setKeyAlias("1")
                 .setTrustStorePath(trustStorePath)
+                .setTrustStorePassword(password)
                 .setDapsUrl("https://daps.aisec.fraunhofer.de")
                 .setSecurityRequirements(securityRequirements)
                 .build()
@@ -103,8 +109,12 @@ class Utility {
 
         val dapsDriverOtherClient = AisecDapsDriver(
             AisecDapsDriverConfig.Builder()
+                .setKeyPassword(password)
                 .setKeyStorePath(keyStorePathOtherClient)
+                .setKeyStorePassword(password)
+                .setKeyAlias("1")
                 .setTrustStorePath(trustStorePath)
+                .setTrustStorePassword(password)
                 .setDapsUrl("https://daps.aisec.fraunhofer.de")
                 .setSecurityRequirements(securityRequirements)
                 .build()

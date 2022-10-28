@@ -19,25 +19,25 @@
  */
 package de.fhg.aisec.ids.clearinghouse.idscp2
 
-import de.fhg.aisec.ids.idscp2.app_layer.AppLayerConnection
-import de.fhg.aisec.ids.idscp2.default_drivers.remote_attestation.dummy.RaProverDummy2
-import de.fhg.aisec.ids.idscp2.default_drivers.remote_attestation.dummy.RaVerifierDummy2
-import de.fhg.aisec.ids.idscp2.default_drivers.secure_channel.tlsv1_3.NativeTLSDriver
-import de.fhg.aisec.ids.idscp2.default_drivers.secure_channel.tlsv1_3.NativeTlsConfiguration
-import de.fhg.aisec.ids.idscp2.idscp_core.FastLatch
-import de.fhg.aisec.ids.idscp2.idscp_core.api.configuration.Idscp2Configuration
-import de.fhg.aisec.ids.idscp2.idscp_core.api.idscp_connection.Idscp2ConnectionAdapter
-import de.fhg.aisec.ids.idscp2.idscp_core.ra_registry.RaProverDriverRegistry
-import de.fhg.aisec.ids.idscp2.idscp_core.ra_registry.RaVerifierDriverRegistry
+import de.fhg.aisec.ids.idscp2.applayer.AppLayerConnection
+import de.fhg.aisec.ids.idscp2.defaultdrivers.remoteattestation.dummy.RaProverDummy2
+import de.fhg.aisec.ids.idscp2.defaultdrivers.remoteattestation.dummy.RaVerifierDummy2
+import de.fhg.aisec.ids.idscp2.defaultdrivers.securechannel.tls13.NativeTLSDriver
+import de.fhg.aisec.ids.idscp2.defaultdrivers.securechannel.tls13.NativeTlsConfiguration
+import de.fhg.aisec.ids.idscp2.core.FastLatch
+import de.fhg.aisec.ids.idscp2.core.api.configuration.Idscp2Configuration
+import de.fhg.aisec.ids.idscp2.core.api.connection.Idscp2ConnectionAdapter
+import de.fhg.aisec.ids.idscp2.core.raregistry.RaProverDriverRegistry
+import de.fhg.aisec.ids.idscp2.core.raregistry.RaVerifierDriverRegistry
 import de.fraunhofer.iais.eis.Message
 import de.fraunhofer.iais.eis.ids.jsonld.Serializer
 import org.slf4j.LoggerFactory
 import java.nio.charset.StandardCharsets
 
-class Idscp2Client constructor(configuration: Idscp2Configuration, nativeTlsConfiguration: NativeTlsConfiguration) {
-
-    val configuration = configuration
-    val nativeTlsConfiguration = nativeTlsConfiguration
+class Idscp2Client constructor(
+    private val configuration: Idscp2Configuration,
+    private val nativeTlsConfiguration: NativeTlsConfiguration
+) {
 
     init{
         // register ra drivers

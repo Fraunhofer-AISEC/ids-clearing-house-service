@@ -19,8 +19,14 @@
  */
 package de.fhg.aisec.ids.clearinghouse
 
-import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.*
-import de.fraunhofer.iais.eis.ids.jsonld.Serializer
+import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.AUTH_HEADER
+import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.CAMEL_HTTP_STATUS_CODE_HEADER
+import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.CAMEL_MULTIPART_HEADER
+import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.MULTIPART_HEADER
+import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.MULTIPART_PAYLOAD
+import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.PID_HEADER
+import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.SERVER
+import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.TYPE_HEADER
 import org.apache.camel.Exchange
 import org.apache.camel.Processor
 import org.apache.http.entity.ContentType
@@ -31,7 +37,7 @@ import org.slf4j.LoggerFactory
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
-import java.util.*
+import java.util.UUID
 
 class MultipartOutputProcessor : Processor {
 
@@ -41,7 +47,6 @@ class MultipartOutputProcessor : Processor {
 
     companion object {
         private val LOG = LoggerFactory.getLogger(MultipartOutputProcessor::class.java)
-        private val SERIALIZER = Serializer()
 
         fun processMultipartOutput(exchange: Exchange) {
             val egetIn = exchange.getIn()
