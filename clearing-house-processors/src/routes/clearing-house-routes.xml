@@ -7,14 +7,41 @@
           http://camel.apache.org/schema/spring
           https://camel.apache.org/schema/spring/camel-spring-3.16.0.xsd">
 
-    <camel:sslContextParameters id="ChSslContext">
-        <camel:keyManagers keyPassword="password">
-            <camel:keyStore resource="etc/keystore.p12" password="password"/>
-        </camel:keyManagers>
-        <camel:trustManagers>
-            <camel:keyStore resource="etc/truststore.p12" password="password"/>
-        </camel:trustManagers>
-    </camel:sslContextParameters>
+    <bean id="jasypt" class="org.apache.camel.component.jasypt.JasyptPropertiesParser">       
+        <property name="password" value="password"/>
+    </bean>
+
+    <bean class="org.apache.camel.spring.spi.BridgePropertyPlaceholderConfigurer" id="bridgePropertyPlaceholder">
+        <property name="location" value="file:/root/etc/ch.properties"/>
+        <property name="parser" ref="jasypt"/>
+    </bean>
+
+    <bean class="org.apache.camel.support.jsse.SSLContextParameters" id="ChSslContext">
+        <property name="keyManagers">
+            <bean class="org.apache.camel.support.jsse.KeyManagersParameters">
+                <property name="keyStore">
+                    <camel:keyStoreParameters password="${truststore.pw}"
+                                              resource="${ch.keyStoreResource}"/>
+                </property>
+                <property name="keyPassword" value="${ch.keyStorePassword}"/>
+            </bean>
+        </property>
+        <property name="trustManagers" ref="routeTrustManagers"/>
+    </bean>
+
+    <bean class="org.apache.camel.support.jsse.TrustManagersParameters" id="routeTrustManagers">
+        <property name="keyStore">
+            <camel:keyStoreParameters password="${ch.trustStorePassword}" resource="${ch.trustStoreResource}"/>
+        </property>
+    </bean>
+
+    <bean id="jetty" class="org.apache.camel.component.jetty9.JettyHttpComponent9">
+        <property name="sslSocketConnectorProperties">
+            <map>
+                <entry key="needClientAuth" value="true"/>
+            </map>
+        </property>
+    </bean>
 
     <!-- Beans -->
     <bean id="CHOutputProcessor" class="de.fhg.aisec.ids.clearinghouse.ClearingHouseOutputProcessor" />
@@ -28,9 +55,10 @@
 
     <!-- Routes -->
     <camelContext xmlns="http://camel.apache.org/schema/spring">
-        <restConfiguration scheme="https" component="jetty" host="0.0.0.0" port="9999" bindingMode="off">
+        <!--propertyPlaceholder id="properties" location="file:/root/etc/ch.properties" propertiesParserRef="jasypt"/-->
+        <restConfiguration scheme="https" component="jetty" host="0.0.0.0" port="{{ch.multipart.port}}" bindingMode="off">
             <endpointProperty key="sslContextParameters" value="#ChSslContext"/>
-        </restConfiguration>
+        </restConfiguration>            
 
         <rest id="CH_REST">
             <post path="/messages/query/{pid}" id="CH_QUERY_PID">
@@ -46,6 +74,7 @@
                 <to uri="direct:multipart" />
             </post>
         </rest>
+
         <route id="CH_MULTIPART_ROUTE">
             <from uri="direct:multipart"/>
             <onException>
@@ -57,8 +86,9 @@
                 </handled>
                 <transform><simple>${exception.message}</simple></transform>
                 <log message="### Handle ${exception.class} ###"/>
+                <log message="### Got ${exception.stacktrace} ###"/>
                 <removeHeader name="idsMultipartHeader"/>
-                <removeHeader name="pid"/>
+                <removeHeader name="pid"/>                
                 <choice>
                     <when>
                         <simple>${exception.class} == 'java.lang.SecurityException' || ${exception.class} == 'java.lang.IllegalArgumentException'</simple>
@@ -73,16 +103,18 @@
                         <transform><constant>Internal Server Error</constant></transform>
                     </otherwise>
                 </choice>
-            </onException>
+            </onException>            
+            <log message="### Print Env Variable ${env:TC_KEYSTORE_PW} ###"/>
+            <log message="### Print Env Variable {{truststore.pw}} ###"/>
             <process ref="MultipartInputProcessor" />
             <process ref="InfoModelParsingProcessor" />
             <process ref="TokenValidationProcessor" />
-            <to uri="http://logging-service:8000/?bridgeEndpoint=true&amp;throwExceptionOnFailure=false" />
+            <to uri="http://logging-service:8000/?bridgeEndpoint=true&amp;throwExceptionOnFailure=false" />            
             <process ref="CHOutputProcessor" />
             <process ref="MultipartOutputProcessor" />
         </route>
         <route id="CH_IDSCP2_ROUTE">
-            <from uri="idscp2server://0.0.0.0:29292?sslContextParameters=#ChSslContext&amp;useIdsMessages=true&amp;copyHeadersRegex=%28ch-ids-%5Ba-z%5D%2A%7CContent-Type%29"/>
+            <from uri="idscp2server://0.0.0.0:${ch.idscp2.port}?sslContextParameters=#ChSslContext&amp;useIdsMessages=true&amp;tlsClientHostnameVerification=false&amp;copyHeadersRegex=%28ch-ids-%5Ba-z%5D%2A%7CContent-Type%29"/>
             <onException>
                 <exception>java.io.IOException</exception>
                 <exception>java.lang.SecurityException</exception>
@@ -92,7 +124,7 @@
                 </handled>
                 <log message="### Handle ${exception.class} ###"/>
                 <removeHeader name="idsMultipartHeader"/>
-                <removeHeader name="pid"/>
+                <removeHeader name="pid"/>                                
                 <process ref="Idscp2ErrorHandler"/>
             </onException>
             <process ref="TypeExtractionProcessor"/>
@@ -101,7 +133,7 @@
                     <simple>${exchangeProperty.ids-type} == 'RequestMessage'</simple>
                     <log message="### Handle RequestMessage ###"/>
                     <setHeader name="CamelHttpMethod"><simple>POST</simple></setHeader>
-                    <setHeader name="CamelHttpPath"><simple>/process/${headers.ch-ids-pid}</simple></setHeader>
+                    <setHeader name="CamelHttpPath"><simple>/process/${headers.ch-ids-pid}</simple></setHeader>                    
                     <process ref="idscp2Processor"/>
                     <process ref="TokenValidationProcessor" />
                     <to uri="http://logging-service:8000/?bridgeEndpoint=true&amp;throwExceptionOnFailure=false" />
@@ -112,16 +144,16 @@
                     <log message="### Handle QueryMessage ###"/>
                     <setHeader name="CamelHttpMethod"><simple>POST</simple></setHeader>
                     <setHeader name="CamelHttpPath"><simple>/messages/query/${headers.ch-ids-pid}</simple></setHeader>
-                    <process ref="idscp2Processor"/>
-                    <process ref="TokenValidationProcessor" />
-                    <to uri="http://logging-service:8000/?bridgeEndpoint=true&amp;throwExceptionOnFailure=false" />
+                    <process ref="idscp2Processor"/>               
+                    <process ref="TokenValidationProcessor" />     
+                    <to uri="http://logging-service:8000/?bridgeEndpoint=true&amp;throwExceptionOnFailure=false" />                    
                     <process ref="CHOutputProcessor" />
                 </when>
                 <when>
                     <simple>${exchangeProperty.ids-type} == 'LogMessage'</simple>
                     <log message="### Handle LogMessage ###"/>
                     <setHeader name="CamelHttpMethod"><simple>POST</simple></setHeader>
-                    <setHeader name="CamelHttpPath"><simple>/messages/log/${headers.ch-ids-pid}</simple></setHeader>
+                    <setHeader name="CamelHttpPath"><simple>/messages/log/${headers.ch-ids-pid}</simple></setHeader>                    
                     <process ref="idscp2Processor"/>
                     <process ref="TokenValidationProcessor" />
                     <to uri="http://logging-service:8000/?bridgeEndpoint=true&amp;throwExceptionOnFailure=false" />
@@ -133,6 +165,6 @@
                     <setBody><simple>${null}</simple></setBody>
                 </otherwise>
             </choice>
-        </route>
+        </route>        
     </camelContext>
 </beans>
