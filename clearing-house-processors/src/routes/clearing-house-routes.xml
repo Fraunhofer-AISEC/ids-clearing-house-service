@@ -20,10 +20,10 @@
         <property name="keyManagers">
             <bean class="org.apache.camel.support.jsse.KeyManagersParameters">
                 <property name="keyStore">
-                    <camel:keyStoreParameters password="${truststore.pw}"
+                    <camel:keyStoreParameters password="${ch.keyStorePassword}"
                                               resource="${ch.keyStoreResource}"/>
                 </property>
-                <property name="keyPassword" value="${ch.keyStorePassword}"/>
+                <property name="keyPassword" value="${ch.keyPassword}"/>
             </bean>
         </property>
         <property name="trustManagers" ref="routeTrustManagers"/>
@@ -103,9 +103,8 @@
                         <transform><constant>Internal Server Error</constant></transform>
                     </otherwise>
                 </choice>
-            </onException>            
+            </onException>
             <log message="### Print Env Variable ${env:TC_KEYSTORE_PW} ###"/>
-            <log message="### Print Env Variable {{truststore.pw}} ###"/>
             <process ref="MultipartInputProcessor" />
             <process ref="InfoModelParsingProcessor" />
             <process ref="TokenValidationProcessor" />
