@@ -20,6 +20,9 @@
 package de.fhg.aisec.ids.clearinghouse
 
 import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.CAMEL_HTTP_PATH
+import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.CH_CONTRACT_SERVICE
+import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.CH_LOGGING_SERVICE
+import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.CH_SERVICE_PROPERTY
 import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.IDSCP_ID_HEADER
 import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.IDSCP_PAGE_HEADER
 import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.IDSCP_PID_HEADER
@@ -30,6 +33,7 @@ import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.IDS_PROTOCOL
 import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.PROTO_IDSCP2
 import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.TYPE_HEADER
 import de.fhg.aisec.ids.clearinghouse.ClearingHouseConstants.TYPE_JSON
+import de.fraunhofer.iais.eis.ContractAgreementMessage
 import de.fraunhofer.iais.eis.Message
 import de.fraunhofer.iais.eis.QueryMessage
 import de.fraunhofer.iais.eis.RequestMessage
@@ -47,6 +51,9 @@ class ClearingHouseInputValidationProcessor : Processor {
         val headers = egetIn.headers
         val body = exchange.message.getBody(ByteArray::class.java)
 
+        // the default value for incoming requests
+        exchange.setProperty(CH_SERVICE_PROPERTY, CH_LOGGING_SERVICE)
+
         if (LOG.isTraceEnabled) {
             LOG.trace("[IN] ${ClearingHouseInputValidationProcessor::class.java.simpleName}")
             for (header in headers.keys) {
@@ -57,7 +64,7 @@ class ClearingHouseInputValidationProcessor : Processor {
         // Prepare compound message for Clearing House Service API
         val idsHeader = exchange.message.getHeader(IDS_HEADER) as Message
         val contentTypeHeader = (headers[TYPE_HEADER] as String?)
-        val chMessage = ClearingHouseMessage(idsHeader, contentTypeHeader, body)
+        var chMessage = ClearingHouseMessage(idsHeader, contentTypeHeader, body)
 
         LOG.info("idsmessage: {}", idsHeader.id)
 
@@ -68,6 +75,13 @@ class ClearingHouseInputValidationProcessor : Processor {
                 LOG.warn("Expected application/json, got {}", chMessage.payloadType)
                 throw IllegalArgumentException("Expected content-type application/json")
             }
+        }
+
+        // Input validation: check for contract agreement
+        if (chMessage.header is ContractAgreementMessage){
+            exchange.setProperty(CH_SERVICE_PROPERTY, CH_CONTRACT_SERVICE)
+            val expectedContentType = ContentType.create("application/json")
+            exchange.getIn().setHeader(CAMEL_HTTP_PATH, "/negotiation")
         }
 
         // Input validation: construct url from headers for IDSCP2
@@ -107,7 +121,14 @@ class ClearingHouseInputValidationProcessor : Processor {
 
         // Copy Content-Type from payload part populate body with new payload
         exchange.getIn().setHeader(TYPE_HEADER, TYPE_JSON)
-        exchange.getIn().body = chMessage.toJson()
+
+        if (exchange.properties[CH_SERVICE_PROPERTY] == CH_CONTRACT_SERVICE){
+            LOG.trace("PAYLOAD: ${chMessage.payload}")
+            exchange.getIn().body = chMessage.payload
+        }
+        else{
+            exchange.getIn().body = chMessage.toJson()
+        }
     }
 
     companion object {

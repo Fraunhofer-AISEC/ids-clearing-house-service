@@ -4,6 +4,7 @@ import de.fhg.aisec.ids.clearinghouse.multipart.MultipartEndpointTest
 import de.fhg.aisec.ids.idscp2.daps.aisecdaps.AisecDapsDriver
 import de.fhg.aisec.ids.idscp2.daps.aisecdaps.AisecDapsDriverConfig
 import de.fhg.aisec.ids.idscp2.keystores.KeyStoreUtil.loadKeyStore
+import de.fraunhofer.iais.eis.ContractAgreementMessageBuilder
 import de.fraunhofer.iais.eis.DynamicAttributeToken
 import de.fraunhofer.iais.eis.DynamicAttributeTokenBuilder
 import de.fraunhofer.iais.eis.LogMessageBuilder
@@ -57,7 +58,7 @@ data class OwnerList(val owners: List<String>)
 
 
 enum class MessageType{
-    LOG, PID, QUERY
+    LOG, PID, QUERY, CONTRACT
 }
 
 class Utility {
@@ -209,6 +210,14 @@ class Utility {
                     ._issuerConnector_(URI.create("http://ch-ids.aisec.fraunhofer.de/idscp-client"))
                     ._issued_(DatatypeFactory.newInstance().newXMLGregorianCalendar(LocalDateTime.now().toString()))
                     ._senderAgent_(URI.create("http://ch-ids.aisec.fraunhofer.de/idscp-client"))
+                    ._modelVersion_("4.0")
+                    .build()
+                MessageType.CONTRACT -> return ContractAgreementMessageBuilder()
+                    ._securityToken_(token)
+                    ._issuerConnector_(URI.create("http://ch-ids.aisec.fraunhofer.de/idscp-client"))
+                    ._issued_(DatatypeFactory.newInstance().newXMLGregorianCalendar(LocalDateTime.now().toString()))
+                    ._senderAgent_(URI.create("http://ch-ids.aisec.fraunhofer.de/idscp-client"))
+                    ._correlationMessage_(URI.create("http://ch-ids.aisec.fraunhofer.de/some-contract-id"))
                     ._modelVersion_("4.0")
                     .build()
             }

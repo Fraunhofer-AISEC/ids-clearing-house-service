@@ -45,4 +45,10 @@ final class ClearingHouseConstants {
   static final String TYPE_JSON = "application/json";
   static final String SERVER = "Server";
   static final String BEARER = "Bearer ";
+
+  static final String CH_SERVICE_PROPERTY = "ch-service";
+
+  static final String CH_LOGGING_SERVICE = "logging-service";
+
+    static final String CH_CONTRACT_SERVICE = "contract-service";
 }

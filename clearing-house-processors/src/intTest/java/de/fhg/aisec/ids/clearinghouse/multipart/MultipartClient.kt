@@ -19,6 +19,7 @@ class MultipartClient {
         private val LOG_URL = "messages/log/"
         private val QUERY_URL = "messages/query/"
         private val PROCESS_URL = "process/"
+        private val CONTRACT_URL ="negotiation/"
 
         private fun makePart(name: String, payload: String, ctJson: Boolean): MultipartBody.Part{
             var headers = Headers.Builder().add("Content-Disposition", "form-data; name=\"$name\"")
@@ -76,5 +77,14 @@ class MultipartClient {
             return makeRequest(url, m, payload, ctJson)
         }
 
+        fun contractMessage(pid: String, payload: String, authenticated: Boolean = true, client: Int = 1): Request{
+            val m = if (authenticated){
+                MultipartEndpointTest.getMessage(MessageType.CONTRACT, client)
+            } else{
+                MultipartEndpointTest.getInvalidMessage(MessageType.CONTRACT)
+            }
+            val url = "$BASE_URL$CONTRACT_URL"
+            return makeRequest(url, m, payload, false)
+        }
     }
 }

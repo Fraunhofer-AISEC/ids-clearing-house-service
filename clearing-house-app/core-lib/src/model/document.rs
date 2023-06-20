@@ -284,6 +284,6 @@ fn format_pt_for_storage(field_name: &str, pt: &str) -> String {
     format!("{}{}{}", field_name, SPLIT_CT, pt)
 }
 
-fn format_tc(tc: i64) -> String{
+pub fn format_tc(tc: i64) -> String{
     format!("{:08}", tc)
 }

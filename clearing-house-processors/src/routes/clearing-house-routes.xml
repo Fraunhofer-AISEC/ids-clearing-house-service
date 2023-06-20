@@ -54,6 +54,12 @@
         </restConfiguration>
 
         <rest id="CH_REST">
+            <post path="/negotiation" id="CH_NEG">
+                <to uri="direct:multipart" />
+            </post>
+            <post path="/negotiation/{cid}" id="CH_NEG_CID">
+                <to uri="direct:multipart" />
+            </post>
             <post path="/messages/query/{pid}" id="CH_QUERY_PID">
                 <to uri="direct:multipart" />
             </post>
@@ -103,7 +109,18 @@
             <setHeader name="ids-protocol"><simple>idsMultipart</simple></setHeader>
             <process ref="chInputValidationProcessor" />
             <process ref="chSharedSecretProcessor" />
-            <to uri="http://logging-service:8000/?bridgeEndpoint=true&amp;throwExceptionOnFailure=false" />
+            <choice>
+                <when>
+                    <simple>${exchangeProperty.ch-service} == 'contract-service</simple>
+                    <log message="### Calling Contract Service ###"/>
+                    <to uri="http://contract-service:8000/?bridgeEndpoint=true&amp;throwExceptionOnFailure=false" />
+                </when>
+                <otherwise>
+                    <log message="### Calling Logging Service ###"/>
+                    <log message="Porperty was: ${exchangeProperty.ch-service}"/>
+                    <to uri="http://logging-service:8000/?bridgeEndpoint=true&amp;throwExceptionOnFailure=false" />
+                </otherwise>
+            </choice>
             <process ref="chOutputProcessor" />
             <process ref="idsMultiPartOutputProcessor" />
         </route>

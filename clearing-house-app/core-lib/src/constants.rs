@@ -22,8 +22,10 @@ pub const ENV_SHARED_SECRET: &'static str = "SHARED_SECRET";
 pub const ENV_DOCUMENT_SERVICE_ID: &'static str = "SERVICE_ID_DOC";
 pub const ENV_KEYRING_SERVICE_ID: &'static str = "SERVICE_ID_KEY";
 pub const ENV_LOGGING_SERVICE_ID: &'static str = "SERVICE_ID_LOG";
+pub const ENV_CONTRACT_SERVICE_ID: &'static str = "SERVICE_ID_CNT";
 
 // definition of rocket mount points
+pub const ROCKET_CNT_API: &'static str = "/negotiation";
 pub const ROCKET_DOC_API: &'static str = "/doc";
 pub const ROCKET_DOC_TYPE_API: &'static str = "/doctype";
 pub const ROCKET_POLICY_API: &'static str = "/policy";
@@ -36,9 +38,11 @@ pub const ROCKET_USER_API: &'static str = "/users";
 pub const DOCUMENT_DB_CLIENT: &'static str = "document-api";
 pub const KEYRING_DB_CLIENT: &'static str = "keyring-api";
 pub const PROCESS_DB_CLIENT: &'static str = "logging-service";
+pub const CONTRACT_DB_CLIENT: &'static str = "contract-service";
 
 // definition of table names
 pub const MONGO_DB: &'static str = "ch_ids";
+pub const CONTRACT_DB: &'static str = "contract";
 pub const DOCUMENT_DB: &'static str = "document";
 pub const KEYRING_DB: &'static str = "keyring";
 pub const PROCESS_DB: &'static str = "process";
@@ -48,6 +52,8 @@ pub const MONGO_COLL_DOC_TYPES: &'static str = "doc_types";
 pub const MONGO_COLL_DOC_PARTS: &'static str = "parts";
 pub const MONGO_COLL_PROCESSES: &'static str = "processes";
 pub const MONGO_COLL_TRANSACTIONS: &'static str = "transactions";
+pub const MONGO_COLL_NEG_COUNTER: &'static str = "neg_ctr";
+pub const MONGO_COLL_NEGOTIATIONS: &'static str = "negotiations";
 pub const MONGO_COLL_MASTER_KEY: &'static str = "keys";
 
 // definition of database fields
@@ -59,6 +65,7 @@ pub const MONGO_NAME: &'static str = "name";
 pub const MONGO_OWNER: &'static str = "owner";
 pub const MONGO_TS: &'static str = "ts";
 pub const MONGO_TC: &'static str = "tc";
+pub const MONGO_NC: &'static str = "nc";
 
 pub const MONGO_DOC_ARRAY: &'static str = "documents";
 pub const MONGO_COUNTER: &'static str = "counter";

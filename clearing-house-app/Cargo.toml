@@ -2,6 +2,7 @@
 
 members = [
     "core-lib",
+    "contract-service",
     "document-api",
     "keyring-api",
     "logging-service"
